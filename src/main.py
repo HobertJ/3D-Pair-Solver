@@ -1,13 +1,14 @@
 # Source code program untuk mencari sepasang titik terdekat di ruang 3D 
 
+# import external module
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import random 
 from math import * 
 import time
+import pyfiglet 
 
-global countDnC
 # fungsi untuk meminta input 
 def generateRandomDots(n):
     result = []
@@ -21,17 +22,56 @@ def generateRandomDots(n):
     
     return result # return list of titik 
 
+
 # procedure untuk print seluruh titik 
 def printDots(dots):
     for i in range(len(dots)):
         print(dots[i])
 
+
 # procedure untuk visualisasi seluruh titik dan 2 titik dengan jarak terdekat (SPEK BONUS)
-def visualize(randomDots,closestPairIndex):
+def visualize(randomDots,closestPairCoordinate):
+    print()
+    print("Sepasang titik berwarna biru menunjukkan sepasang titik terdekat.")
+    print()
+    print("Menampilkan visualisasi data...")
+    time.sleep(0.5)
+    print('.')
+    time.sleep(0.5)
+    print('.')
+    
+
+    # mewarnai seluruh titik dengan warna merah
     colors = np.array(['r'] * len(randomDots))
-    first = closestPairIndex[0];
-    second = closestPairIndex[1];
-    colors[first] = colors[second] = 'b'; 
+    first = closestPairCoordinate[0];
+    second = closestPairCoordinate[1];
+    pertama = 0
+    kedua = 0
+
+    # mencari index titik dalam kumpulan titik
+    for i in range(len(randomDots)):
+        case1 = (randomDots[i][0] == first[0] and randomDots[i][1] == first[1] and randomDots[i][2] == first[2])
+        case2 = (randomDots[i][0] == second[0] and randomDots[i][1] == second[1] and randomDots[i][2] == second[2])
+        if(case1 or case2):
+            pertama = i
+            break
+    
+    # mencari index pasangan titik lainnya dalam kumpulan titik
+    for j in range(pertama+1,len(randomDots)):
+        
+        if(case1):
+            # jika menemukan titik pertama terlebih dahulu, berarti yang selanjutnya dicari adalah titik kedua
+            toSearch = (randomDots[j][0] == second[0] and randomDots[j][1] == second[1] and randomDots[j][2] == second[2])
+        elif(case2):
+            # menemukan titik kedua terlebih dahulu, berarti yang selanjutnya dicari adalah titik pertama
+            toSearch = (randomDots[j][0] == first[0] and randomDots[j][1] == first[1] and randomDots[j][2] == first[2])
+        
+        if((toSearch)):
+            kedua = j
+            break
+    
+    # mengganti warna sepasang titik terdekat dengan warna biru
+    colors[pertama] = colors[kedua] = 'b'
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -94,111 +134,157 @@ def bruteForceClosestPair(listRandomDots):
                 closestPairIndex = (i,j)
             countStep += 1
     
-    doneTime = time.time() * 1000
-    exeTime = doneTime - initTime
+    endTime = time.time() * 1000
+    exeTime = endTime - initTime
     
     return (closestPair, minDistance, exeTime, countStep, closestPairIndex)
 
-# impementasi algoritma DnC untuk menyelesaikan masalah closest pair 
-def DnCClosestPair(listRandomDots):
-    pass 
 
+# fungsi Divide and Conquer untuk mencari sepasang titik terdekat
+def closest_pair(listRandomDots):
+    global countSteps
 
-
-def closest_pair(points):
-    countDnc = 0
-    n = len(points)
+    # kasus basis, bisa selesaikan dengan bruteForce karena n bernilai cukup kecil
+    n = len(listRandomDots)
     if n <= 3:
-        return brute_force_closest_pair(points)
+        m = bruteForceClosestPair(listRandomDots)
+        countSteps += m[3]
+        return (m[1],m[0])
+    
+    # cari titik tengah untuk membagi kumpulan titik menjadi dua bagian
+    # dengan jumlah yang sama banyak 
     mid = n // 2
-    left_points = points[:mid]
-    right_points = points[mid:]
+
+    # bagi titik menjadi 2 himpunan, yaitu kiri dan kanan
+    left_points = listRandomDots[:mid]
+    right_points = listRandomDots[mid:]
+
+    # cari closest pair pada kedua bagian himpunan secara rekursif 
     left_closest = closest_pair(left_points)
     right_closest = closest_pair(right_points)
-    closest = min(left_closest, right_closest)
+
+    # ambil pasangan titik dengan jarak terdekat di antara kiri atau kanan
+    if min(left_closest[0], right_closest[0]) == left_closest[0]:
+        closest_pairs = left_closest[1]
+    else:
+        closest_pairs = right_closest[1]
+    
+    closest = min(left_closest[0], right_closest[0])
+
+    # lakukan pengecekan lagi untuk titik-titik di sekitar garis bagi
     mid_points = []
-    for point in points:
-        if abs(point[0] - points[mid][0]) < closest:
-            mid_points.append(point)
-            # countDnc += 1
+    for dots in listRandomDots:
+        if abs(dots[0] - listRandomDots[mid][0]) < closest:
+            mid_points.append(dots)
+
     mid_points.sort(key=lambda x: x[1])
     mid_closest = closest
     for i in range(len(mid_points)):
         for j in range(i + 1, len(mid_points)):
             if mid_points[j][1] - mid_points[i][1] >= mid_closest:
                 break
-            dist = distance(mid_points[i], mid_points[j])
-            countDnc += 1
+            dist = getDistanceBetween(mid_points[i], mid_points[j])
+            countSteps += 1 
             if dist < mid_closest:
                 mid_closest = dist
-    return min(closest, mid_closest)
+                mid_closest_point = (mid_points[i],mid_points[j])
+
+    if(min(closest,mid_closest) == closest):
+        return (closest, closest_pairs)
+    else:
+        return (mid_closest, mid_closest_point)
 
 
-def brute_force_closest_pair(points):
-    n = len(points)
-    closest = float('inf')
-    for i in range(n):
-        for j in range(i + 1, n):
-            dist = distance(points[i], points[j])
-            if dist < closest:
-                closest = dist
-    return closest
-
-
-def distance(p1, p2):
-    return sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2 + (p1[2] - p2[2])**2)
-
-# fungsi untuk menampilkan output hasil run 
-def printOutput(hasil):
+def printHasil(randomDots,hasil,exeTime,countStep):
     print("Hasil dari run ini adalah sebagai berikut : ")
     print()
-    print("Pasangan titik terdekat: ", hasil[0])
-    print("Jarak pasangan titik terdekat: ", hasil[1])
-    print(f'Waktu eksekusi: {hasil[2]} milisekon')
-    print("Jumlah perhitungan rumus Euclidian: ", hasil[3])
+    print(f"Pasangan titik terdekat             : {hasil[1][0]} , {hasil[1][1]}")
+    print(f"Jarak pasangan titik terdekat       : {hasil[0]} satuan")
+    print(f"Waktu eksekusi program              : {exeTime} milisekon")
+    print(f"Jumlah perhitungan rumus Euclidean  : {countStep}")
 
     print()
-    print("##################################################")
+    print('#' * 80)
     print()
-    answer = input("[y/n]: ").lower()
+    answer = input("Ingin menampilkan visualisasi titik di ruang 3D? [y/n]: ").lower()
     if answer == 'y':
-        visualize(randomDots,hasil[4])
-        
-    
-    print("Terima kasih telah menggunakan program ini ^-^")
+        visualize(quick_sort(randomDots),hasil[1])
+
+
+def printWelcomeScreen(): 
+    welcomeText = pyfiglet.figlet_format("Closest Pair 3D Solver")
+    print(welcomeText)
     print()
+    print('#' * 80)
+    print()
+
+
+def printExitScreen():
+    print()
+    print("#" * 80)
+    print()
+    exitText = pyfiglet.figlet_format("THANK YOU! ^-^")
+    print(exitText)
+    print()
+
+def getAndValidateInput():
+    correctInput = False
+    while not correctInput:
+        try:
+            n = int(input("Masukkan jumlah titik (n): "))
+        except:
+            print("Masukkan Anda tidak sesuai, silahkan ulangi masukan Anda")
+            print()
+            n = "salah"
+        
+        if(type(n) == int):
+            if(n < 1):
+                print("Untuk mencari pasangan titik terdekat diperlukan minimal 2 titik!")
+                print("Silakan ulangi kembali masukan.")
+                print()
+            else:
+                correctInput = True
     
+    return n
+
+
+def continueOrNot():
+    print()
+    print('#' * 80)
+    print()
+    answer = False
+    ask = input("Ingin mencoba jumlah titik lainnya? [y/n]: ").lower()
+    if(ask == 'y'):
+        answer = True
+        print()
+        print("#" * 80)
+        print()
     
+    return answer
+
+
 # main program 
 if __name__ == '__main__' :
+
+    run = True
+    printWelcomeScreen()
+
+    while run:
+
+        countSteps = 0
+
+        n = getAndValidateInput()
+        randomDots = generateRandomDots(n)
+        startTime = time.time() * 1000
+        hasil = closest_pair(quick_sort(randomDots))
+        endTime = time.time() * 1000
+        exeTime = endTime - startTime
+
+        printHasil(randomDots,hasil,exeTime,countSteps)
+
+        run = continueOrNot()
+
+    printExitScreen()
     
-    print("SELEMAT DATANG DI PROGRAM MENCARI PASANGAN TITIK TERDEKAT")
-    print()
-    n = int(input("Masukkan jumlah titik (n): "))
-    randomDots = generateRandomDots(n)
-    hasil = bruteForceClosestPair(randomDots)
-
-    printOutput(hasil)
-
-
-
-
-    # successCase = 0 
-    # n = int(input("Masukkan jumlah percobaan : "))
-    # k = int(input("Masukkan jumlah titik untuk tiap percobaan : "))
-    # startTime = time.time() * 1000
-    # for i in range(n):
-    #     randomDots = generateRandomDots(k)
-    #     hasil = bruteForceClosestPair(randomDots)
-    #     hasil2 = closest_pair((quick_sort(randomDots)))
-        
-    #     if hasil[1] == hasil2:
-    #         successCase += 1
-    # endTime = time.time() * 1000
-
-    # computationTime = endTime - startTime
-    # print("Waktu Eksekusi =", computationTime)
-    
-    # print((successCase / n) * 100)
 
 
