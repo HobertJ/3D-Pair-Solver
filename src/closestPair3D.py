@@ -40,4 +40,3 @@ def bruteForceClosestPair3D(listRandomDots):
     exeTime = endTime - initTime
 
     return (closestPair, minDistance, exeTime, countStep, closestPairIndex)
-

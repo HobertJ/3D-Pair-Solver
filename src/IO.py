@@ -205,8 +205,3 @@ def visualize3D(randomPoints,closestPairCoordinate):
     ax.set_zlabel('Z')
 
     plt.show()
-
-# procedure untuk print seluruh titik 
-def printPoints(points):
-    for i in range(len(points)):
-        print(points[i])

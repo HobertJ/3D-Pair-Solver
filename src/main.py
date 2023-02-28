@@ -93,11 +93,15 @@ def DnCclosestPairND(points):
     
     mid_x = points[mid][0]
     strip = [p for p in points if abs(p[0] - mid_x) < d]
-    
-    strip = quickSort(strip,1)  
+
+    if(len(points[0]) > 1):
+        n = 1
+    else:
+        n = 0
+    strip = quickSort(strip,n)  
     for i in range(len(strip)):
         for j in range(i+1, len(strip)):
-            if strip[j][1] - strip[i][1] >= d:
+            if strip[j][n] - strip[i][n] >= d:
                 break
             dist = getDistanceBetweenND(strip[i], strip[j])
             countStepN += 1
